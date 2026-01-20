@@ -18,34 +18,30 @@ function secureCompare(a: string, b: string){
 }
 
 export function proxy(req: NextRequest) {
-    const isProtected = req.nextUrl.pathname.startsWith("/api/secret");
+    // const isProtected = req.nextUrl.pathname.startsWith("/api/secret");
 
-    if(!isProtected) return NextResponse.next();
+    // if(!isProtected) return NextResponse.next();
+
+    if (req.method === "OPTIONS") return NextResponse.next();
 
     const header = req.headers.get("authorization") || "";
     if(!header.startsWith("Basic")) return unauthorized();
 
-    let decoded: string;
+    let decoded = "";
     try{
         decoded = atob(header.slice(6));
     }catch{
         return unauthorized();
     }
 
-    const sepIndex = decoded.indexOf(":");
-    if(sepIndex === -1) return unauthorized();
+    const i = decoded.indexOf(":");
+    if(i === -1) return unauthorized();
 
-    const user = decoded.slice(0,sepIndex);
-    const pass = decoded.slice(sepIndex + 1);
-
-    console.log('user:' + user);
-    console.log('pass:' + pass);
+    const user = decoded.slice(0,i);
+    const pass = decoded.slice(i + 1);
 
     const expectedUser = process.env.BASIC_ABIS_USER || "";
     const expectedPass = process.env.BASIC_ABIS_PASS || "";
-
-    console.log('Exuser:' + expectedUser);
-    console.log('Expass:' + expectedPass);
 
     const ok = secureCompare(user, expectedUser) && secureCompare(pass, expectedPass);
 
@@ -53,5 +49,8 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/api/secret/:path*"],
+    matcher: [
+        "/api/secret/:path*",
+        "/api/employees/:path*",
+    ],
 }
